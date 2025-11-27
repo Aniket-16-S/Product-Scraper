@@ -2,10 +2,11 @@ import asyncio, time
 import scrapeHub.Myntra as m
 import scrapeHub.Amazon as a
 import scrapeHub.Flipcart as f
-from playwright.async_api import async_playwright
 import cache_manager as cache
 from cache_manager import query_processor as nqp
 
+
+import scrapeHub.Meesho as meesho
 
 async def collect_to_queue(source_name, gen, queue):
     async for item in gen:
@@ -14,11 +15,11 @@ async def collect_to_queue(source_name, gen, queue):
 
     await queue.put((source_name, None))
 
-async def merged_printer(sources, lock, query):
+async def collect_results(sources, query):
     queue = asyncio.Queue()
     total_done = 0
     total_sources = len(sources)
-    product_count = 0
+    products = []
 
     tasks = [asyncio.create_task(collect_to_queue(name, gen, queue)) for name, gen in sources]
 
@@ -28,57 +29,75 @@ async def merged_printer(sources, lock, query):
             total_done += 1
             continue
 
-        product_count += 1
-        await cache.store_query_data( query, source, item)
-        async with lock:
-            print(f"\n===== Product {product_count} -- {source} =====")
-            for k, v in item.items():
-                print(f"    {k} : {v}")
-            print("\n")
+        # Add source to item if not present
+        if isinstance(item, dict):
+            item['source'] = source
+            products.append(item)
+            await cache.store_query_data(query, source, item)
 
     await asyncio.gather(*tasks)
     await cache.cache_images(query)
-    return product_count
+    return products
+
+async def search_products(query: str):
+    """
+    Main entry point for searching products.
+    Returns a dictionary with status and data.
+    """
+    await cache.init_table()
+    
+    # NLP Check
+    # Use the engine instance from the module
+    q, is_present = nqp.engine.search(query)
+    
+    # Fallback if NLP returns None (should not happen with latest fix, but safe to have)
+    if not q:
+        q = query
+        
+    if is_present:
+        # For API, we might want to return cached data automatically
+        # For now, let's just return the cached data if it's a "good" match
+        # We need a way to get data from cache without printing
+        # cache.retrieve_query_data prints. We might need to refactor cache_manager too or just scrape if not strict.
+        # Let's assume we scrape for now if not exact match, or we can implement a fetch_from_cache later.
+        # For this refactor, I'll focus on the scraping part.
+        pass
+
+    # No Playwright context needed anymore
+    
+    sources = [
+        ("Myntra", m.fetch(Query=q)),
+        ("Amazon", a.fetch(Query=q)),
+        ("Flipkart", f.fetch(Query=q)),
+        ("Meesho", meesho.fetch(Query=q)),
+    ]
+
+    results = await collect_results(sources, query=query)
+    
+    # Update NLP Engine with new products
+    if results:
+        product_names = [p.get('name') for p in results if p.get('name')]
+        # Run in executor to avoid blocking async loop with heavy CPU work
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, nqp.engine.add_products, product_names)
+    
+    return results
 
 async def main():
-    await cache.init_table()
-    async with async_playwright() as p:
-        lock = asyncio.Lock()
-
-        # Browser for Amazon & Flipkart
-        chrom_browser  = await p.chromium.launch(headless=True)
-        chrom_context  = await chrom_browser.new_context()
-        # Webkit B for Myntra. Experimental !
-        webkit_browser = await p.webkit.launch(headless=True, args=["--disable-http2"])
-        webkit_context = await webkit_browser.new_context()
-        global query
-        query = input("Search for : ").strip()
-        t0 = time.time()
-
-        q, is_present = nqp.check(query)
-        if is_present :
-            sh = input(f"similer results as {q} available in cache.\nshow results for that instead ? (y/n) : ").strip().lower()
-            if  'y' in sh :
-                status = await cache.retrieve_query_data(q)
-                if status :
-                    return
-            elif 'n' in sh :
-                issim = input("    {query}  and  {q} \n    were these queries similer ? (y/n) : ").strip().lower()
-                if 'y' in issim :
-                    await cache.delete_history(q)
-                    
-        
-
-        sources = [
-            ("Myntra", m.fetch(Query=query, context=webkit_context)),
-            ("Amazon", a.fetch(Query=query, context=chrom_context)),
-            ("Flipkart", f.fetch(Query=query, context=chrom_context)),
-        ]
-
-        total = await merged_printer(sources, lock, query=query)
-        dt = time.time() - t0
-
-        print(f"\nDone in {dt:.4f}s — Total products scraped: {total}")
+    query = input("Search for : ").strip()
+    t0 = time.time()
+    
+    # We can use the new function, but for CLI we might want the old printing behavior.
+    # For now, let's just print the results from the new function.
+    results = await search_products(query)
+    
+    for p in results:
+        print(f"\n===== Product -- {p.get('source')} =====")
+        for k, v in p.items():
+            print(f"    {k} : {v}")
+    
+    dt = time.time() - t0
+    print(f"\nDone in {dt:.4f}s — Total products scraped: {len(results)}")
 
 if __name__ == "__main__":
     asyncio.run(main())

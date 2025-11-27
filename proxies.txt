@@ -1,0 +1,2 @@
+# Add proxies here, one per line
+# format: http://user:pass@host:port or http://host:port

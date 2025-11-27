@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Product Scraper</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .admin-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+        }
+
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            background: #252530;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-violet);
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .dashboard-section {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #252530;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .product-list {
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <h2>Admin Login</h2>
+            <input type="password" id="password-input" placeholder="Enter Password">
+            <button class="btn btn-primary" onclick="checkLogin()">Login</button>
+            <p id="login-error" style="color: red; margin-top: 10px; display: none;">Invalid Password</p>
+        </div>
+    </div>
+
+    <div class="admin-container" id="admin-content" style="display: none;">
+        <header style="justify-content: space-between; align-items: center;">
+            <h1>Admin Dashboard</h1>
+            <button class="btn" onclick="logout()">Logout</button>
+        </header>
+
+        <div class="dashboard-section">
+            <h2>System Stats</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-items">0</div>
+                    <div class="stat-label">Total Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-queries">0</div>
+                    <div class="stat-label">Cached Queries</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="db-size">0 MB</div>
+                    <div class="stat-label">Database Size</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Cache Management</h2>
+            <div class="controls">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="number" id="ttl-input" placeholder="TTL (mins)"
+                        style="padding: 10px; border-radius: 5px; border: 1px solid #333; background: #252530; color: white; width: 100px;">
+                    <button class="btn btn-primary" onclick="updateTTL()">Set Global TTL</button>
+                </div>
+                <button class="btn btn-danger" onclick="clearCache()">Force Clear Cache</button>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Recent Products</h2>
+            <div class="product-list" id="product-list">
+                <!-- Items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/admin.js"></script>
+</body>
+
+</html>

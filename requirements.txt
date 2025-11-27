@@ -1,8 +1,4 @@
-playwright
 aiohttp
-asyncio
-hf_xet
-torch
-sentence-transformers
-aiosqlite
-aiofiles
+beautifulsoup4
+selenium
+webdriver-manager

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Search</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Add FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Main Content Area -->
+        <main id="product-grid" class="product-grid">
+            <!-- Products will be injected here -->
+            <div class="empty-state">
+                <h2>Whats in your mind ? </h2>
+            </div>
+        </main>
+
+        <!-- Bottom Search & Filter Bar -->
+        <div class="bottom-bar-container" id="bottom-bar">
+            <div class="search-container">
+                <div class="search-bar-wrapper">
+                    <input type="text" id="search-input" placeholder="Search for products...">
+                    <div class="search-gradient"></div>
+                </div>
+                <button id="search-btn"><i class="fas fa-search"></i></button>
+                <button id="filter-btn"><i class="fas fa-sliders-h"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Popup -->
+    <div id="filter-popup" class="filter-popup hidden">
+        <div class="filter-content">
+            <div class="filter-header">
+                <h3>Filters & Options</h3>
+                <button id="close-filter"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="filter-section">
+                <h4>View Mode</h4>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="detailed">Detailed</button>
+                    <button class="view-btn" data-view="compact">Compact</button>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h4>Sort By</h4>
+                <select id="sort-select">
+                    <option value="random">Random (Default)</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <h4>Price Range</h4>
+                <div class="price-inputs">
+                    <input type="number" id="min-price" placeholder="Min">
+                    <input type="number" id="max-price" placeholder="Max">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h4>Sites</h4>
+                <div class="site-filters">
+                    <label><input type="checkbox" value="Amazon" checked> Amazon</label>
+                    <label><input type="checkbox" value="Flipkart" checked> Flipkart</label>
+                    <label><input type="checkbox" value="Myntra" checked> Myntra</label>
+                    <label><input type="checkbox" value="Meesho" checked> Meesho</label>
+                </div>
+            </div>
+
+            <button id="apply-filters" class="apply-btn">Apply Filters</button>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>

@@ -3,10 +3,16 @@ import aiohttp
 import os
 import time
 import random
-from playwright.async_api import async_playwright
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from utils.network_manager import network_manager
+from utils.browser_manager import get_driver
+import logging
+
+logger = logging.getLogger(__name__)
 
 queue = None
-
 name_url = {}
 
 async def get_url(Qur=None, p_c=None):
@@ -25,7 +31,8 @@ async def get_url(Qur=None, p_c=None):
 
 async def download_image(session, url, folder):
     try:
-        async with session.get(url) as resp:
+        headers = network_manager.get_headers()
+        async with session.get(url, headers=headers) as resp:
             if resp.status == 200:
                 content = await resp.read()
                 os.makedirs(f"Amazon/{folder}", exist_ok=True)
@@ -33,102 +40,196 @@ async def download_image(session, url, folder):
                 filename = f"Amazon/{folder}/{name}"
                 with open(filename, "wb") as f:
                     f.write(content)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Failed to download image {url}: {e}")
 
-async def process_product(session, product, i, folder):
+def scrape_amazon_sync(url, pc):
+    driver = get_driver(headless=True)
+    products_data = []
     try:
-        img = await product.query_selector("img")
-        img_url = await img.get_attribute('src') if img else None
+        driver.get(url)
+        # Reduced wait time
+        time.sleep(1.5)
 
-        title_section = await product.query_selector("[data-cy='title-recipe']")
-        title_links = await title_section.query_selector_all("h2") if title_section else []
-        product_title = [await h2.inner_text() for h2 in title_links]
-        a_tag = await title_section.query_selector("a") if title_section else None
-        product_url = await a_tag.get_attribute('href') if a_tag else None
-
-        try:
-            review_secn = await product.query_selector("[data-cy='reviews-block']")
-            stars = (await (await review_secn.query_selector(".a-icon-alt")).inner_text()).strip()
-            no_of_reviews = (await (await review_secn.query_selector("[aria-hidden='true']")).inner_text()).strip()
+        if pc:
             try:
-                sold = (await (await review_secn.query_selector(".a-size-base.a-color-secondary")).inner_text()).strip()
-            except:
+                # Try to set pincode
+                try:
+                    driver.find_element(By.ID, "nav-global-location-popover-link").click()
+                    time.sleep(1.5)
+                    try:
+                        pincode_input = driver.find_element(By.ID, "GLUXZipUpdateInput")
+                    except:
+                        pincode_input = driver.find_element(By.XPATH, "//input[@aria-label='or enter an Indian pincode']")
+                    
+                    if pincode_input:
+                        pincode_input.send_keys(pc)
+                        driver.find_element(By.ID, "GLUXZipUpdate").click()
+                        time.sleep(5)
+                except:
+                    pass
+            except Exception:
+                pass
+
+        # Find products
+        products = driver.find_elements(By.CSS_SELECTOR, "div[role='listitem']")
+        
+        for i, product in enumerate(products):
+            try:
+                # --- Image Extraction ---
+                img_url = None
+                try:
+                    img = product.find_element(By.TAG_NAME, "img")
+                    img_url = img.get_attribute('src')
+                    if not img_url:
+                        img_url = img.get_attribute('data-src')
+                except:
+                    pass
+
+                # --- Title & Link Extraction ---
+                product_title = []
+                product_url = None
+                
+                try:
+                    # Try finding the title recipe section first
+                    title_section = product.find_element(By.CSS_SELECTOR, "[data-cy='title-recipe']")
+                    h2s = title_section.find_elements(By.TAG_NAME, "h2")
+                    product_title = [h2.text for h2 in h2s]
+                    try:
+                        a_tag = title_section.find_element(By.TAG_NAME, "a")
+                        product_url = a_tag.get_attribute('href')
+                    except:
+                        pass
+                except:
+                    pass
+
+                # Fallback for Link: Search in the whole product card
+                if not product_url:
+                    try:
+                        # Look for any link with a title or just the first link
+                        a_tags = product.find_elements(By.TAG_NAME, "a")
+                        for a in a_tags:
+                            href = a.get_attribute('href')
+                            if href and ("/dp/" in href or "/gp/" in href): # Amazon product links usually contain /dp/ or /gp/
+                                product_url = href
+                                break
+                        if not product_url and a_tags:
+                             product_url = a_tags[0].get_attribute('href')
+                    except:
+                        pass
+                
+                # Ensure absolute URL
+                if product_url and not product_url.startswith('http'):
+                    product_url = "https://www.amazon.in" + product_url
+
+                # --- Reviews & Sold ---
+                stars = "N/A"
+                no_of_reviews = "0"
                 sold = ""
-        except:
-            stars = 'N/A'
-            no_of_reviews = ""
-            sold = ""
+                
+                try:
+                    review_secn = product.find_element(By.CSS_SELECTOR, "[data-cy='reviews-block']")
+                    try:
+                        stars_el = review_secn.find_element(By.CSS_SELECTOR, ".a-icon-alt")
+                        stars = stars_el.get_attribute("textContent").strip()
+                    except:
+                        pass
+                    
+                    try:
+                        reviews_el = review_secn.find_element(By.CSS_SELECTOR, "[aria-hidden='true']")
+                        no_of_reviews = reviews_el.text.strip()
+                    except:
+                        pass
+                    
+                    try:
+                        sold_el = review_secn.find_element(By.CSS_SELECTOR, ".a-size-base.a-color-secondary")
+                        sold = sold_el.text.strip()
+                    except:
+                        pass
+                except:
+                    pass
 
-        try:
-            price_secn = await product.query_selector("[data-cy='price-recipe']")
-            a = await price_secn.query_selector("[aria-describedby='price-link']")
-            cp = (await (await a.query_selector(".a-price-whole")).inner_text()).strip()
-            mrp = await a.get_attribute("aria-hidden")
-            discount_el = await price_secn.query_selector("div.a-row > span:last-of-type")
-            discount = (await discount_el.inner_text()).strip() if discount_el else ""
-        except:
-            cp = mrp = discount = ""
+                # --- Price ---
+                cp = mrp = discount = ""
+                try:
+                    price_secn = product.find_element(By.CSS_SELECTOR, "[data-cy='price-recipe']")
+                    try:
+                        a = price_secn.find_element(By.CSS_SELECTOR, "[aria-describedby='price-link']")
+                        try:
+                            cp_el = a.find_element(By.CSS_SELECTOR, ".a-price-whole")
+                            cp = cp_el.text.strip()
+                        except:
+                            pass
+                        mrp = a.get_attribute("aria-hidden") or ""
+                    except:
+                        pass
+                    
+                    try:
+                        discount_el = price_secn.find_element(By.CSS_SELECTOR, "div.a-row > span:last-of-type")
+                        discount = discount_el.text.strip()
+                    except:
+                        pass
+                except:
+                    pass
 
-        try:
-            delivery_secn = await product.query_selector("[data-cy='delivery-recipe']")
-            final_d = (await delivery_secn.inner_text()).replace('Or', ' Or') if delivery_secn else ""
-        except:
-            final_d = ""
+                # --- Delivery ---
+                final_d = ""
+                stock_status = "In Stock"
+                try:
+                    delivery_secn = product.find_element(By.CSS_SELECTOR, "[data-cy='delivery-recipe']")
+                    final_d = delivery_secn.text.replace('Or', ' Or')
+                    if "Currently unavailable" in final_d:
+                        stock_status = "Out of Stock"
+                except:
+                    pass
 
-        name = ' '.join(product_title)
+                name = ' '.join(product_title) if product_title else "N/A"
+                if name == "N/A":
+                     # Fallback name
+                     try:
+                         name = product.find_element(By.TAG_NAME, "h2").text
+                     except:
+                         pass
 
-        info = {
-            "Name": name,
-            "product_link": f"https://www.amazon.in{product_url}" if product_url else None,
-            "review": f"stars:{stars}, no of rev : {no_of_reviews} , {sold} sold in past month",
-            "price": f" {cp} ( {mrp} with {discount} off)",
-            "delivery": f"{final_d}",
-            "index" : i
-        }
+                info = {
+                    "Name": name,
+                    "product_link": product_url,
+                    "review": f"Rating: {stars}, Count: {no_of_reviews}, Sold: {sold}",
+                    "price": f"{cp} (MRP: {mrp}, Off: {discount})",
+                    "delivery": final_d,
+                    "stock": stock_status,
+                    "specs": "N/A", 
+                    "index" : i,
+                    "img_url": img_url
+                }
+                
+                if name != "N/A" and name != "":
+                    products_data.append(info)
 
-        if img_url:
-            name_url[img_url] = f"product_{i}.jpg" 
-            await download_image(session, img_url, folder)
-
-        if name != '':
-            await queue.put(info)
-
-    except Exception:
-        pass
+            except Exception:
+                continue
+                
+    except Exception as e:
+        print(f"Error processing Amazon content: {e}")
+    finally:
+        driver.quit()
+        
+    return products_data
 
 async def process_content(Qur=None, p_c=None, context=None):
     global queue
     url, pc, folder = await get_url(Qur=Qur, p_c=p_c)
 
-    if not context:
-        p = await async_playwright().start()
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)...")
-
-    page = await context.new_page()
-    await page.goto(url)
-    await page.wait_for_timeout(random.uniform(3000, 5000))
-
-    if pc:
-        try:
-            await page.click("#nav-global-location-popover-link")
-            await page.wait_for_timeout(1500)
-            try:
-                pincode_input = await page.query_selector("#GLUXZipUpdateInput")
-            except:
-                pincode_input = await page.query_selector("//input[@aria-label='or enter an Indian pincode']")
-            await pincode_input.fill(pc)
-            await page.click("#GLUXZipUpdate")
-            await page.wait_for_timeout(5000)
-        except Exception:
-            pass
-
-    products = await page.query_selector_all("div[role='listitem']")
+    products = await asyncio.to_thread(scrape_amazon_sync, url, pc)
 
     async with aiohttp.ClientSession() as session:
-        tasks = [process_product(session, product, i, folder) for i, product in enumerate(products)]
-        await asyncio.gather(*tasks)
+        for product in products:
+            img_url = product.pop("img_url", None)
+            if img_url:
+                name_url[img_url] = f"product_{product['index']}.jpg" 
+                await download_image(session, img_url, folder)
+            
+            await queue.put(product)
 
     await queue.put(None)
 
@@ -142,6 +243,4 @@ async def fetch(Query=None, pincode=None, context=None):
         if item is None:
             break
         yield item
-
     await producer_task
-    
