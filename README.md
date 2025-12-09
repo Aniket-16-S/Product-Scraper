@@ -1,80 +1,115 @@
-# ⚡ Multi-Web Product Scraper (Stealth Mode | Blazing Fast | NLP for queries | Cache Management ) ⚡
+# ⚡ UniScrape: AI-Powered Multi-Platform Product Search
 
-### Search Amazon, Flipkart, and Myntra — *all at once*, way before your coffee is ready.
-### Built with async Playwright for stealth, speed.
-
----
-
-## 🚀 What's Cookin’ :
-
-- 🔍 **Multi-Site Support**: Scrapes all products from Amazon, Flipkart, and Myntra ( more coming soon . . . ).
-- 🧠 **`Natural Language Processing`** : Uses all-MiniLM-L6-v2 model for understanding user queries.
-- 🛢️ **`Cache Management`** : Uses aiosqlite to cache the searched results to avoid computation expences.
-- 📈 **150+ Products in 18 Seconds**: Yup, tested — ~152 products loaded in one go ( 18-20s sec ).
-- 🖼️ **`Photo Gallery`** : Product photos are saved with dedicated folder.
-- ⚡ **SuperFast Scraping**: Built with asyncio, aiohttp, and Playwright, scrapes *around 150 products within 20 sec* 💨
-- 🕶️ **Headless & Stealth Mode**: Runs in the background and mimics human behavior to dodge bot detection.
-- 🧠 **Why This Slaps**: Manually opening 3 sites, scrolling forever, and remembering deals? Nah. Just type what you want — this gives you 150+ options instantly.
+> **Compare products from Amazon, Flipkart, Myntra, and Meesho in milliseconds.**  
+> *Built for speed, stealth, and scalability.*
 
 ---
 
-## 💻 How To Run
-Clone this repo :
+## 🚀 Overview
+
+**UniScrape** is a high-performance, asynchronous product aggregation engine. It scrapes multiple e-commerce platforms in parallel using **Playwright** (browser automation), processes data with **Natural Language Processing (NLP)**, and serves results via a **FastAPI** backend. 
+
+Designed for developers who need robust data extraction without the headache of managing proxies, captchas, or basic DOM parsing.
+
+---
+
+## ✨ Key Features
+
+### 🧠 Intelligent Core
+- **NLP-Powered Search**: Uses `all-MiniLM-L6-v2` to understand user queries and match products more accurately.
+- **Smart Caching**: SQLite-based caching with Time-To-Live (TTL) mechanisms. Cached queries return instantly (<50ms).
+- **Session Management**: Handles multiple user sessions with query prioritization.
+
+### 🚄 High-Performance Architecture
+- **Async First**: Built on `asyncio` and `aiohttp` for non-blocking operations.
+- **Concurrency Control**: Implements Semaphores to manage load and rate limits, preventing IP bans.
+- **Stealth Mode**: Uses headless browser behaviors to mimic real users, bypassing standard bot detection.
+
+### 🌐 Universal Coverage
+- **Supported Platforms**:
+  - 🛒 **Amazon**
+  - 🛍️ **Flipkart**
+  - 👗 **Myntra**
+  - 📦 **Meesho**
+
+### 🎨 Modern UI
+- **Responsive Frontend**: Clean, dark-themed interface built with Vanilla JS & CSS.
+- **Advanced Filtering**: Filter by price, platform, and sort options.
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Python 3.10+, FastAPI, Uvicorn |
+| **Scraping** | Playwright (Async), Aiohttp |
+| **Database** | SQLite3 (Async) |
+| **ML/NLP** | Sentence-Transformers (HuggingFace) |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+
+---
+
+## ⚡ Quick Start
+
+### Prerequisites
+- Python 3.8+
+- Node.js (optional, for frontend dev)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Aniket-16-S/product-Sraper.git
+   cd product-Sraper
+   ```
+
+2. **Install Python Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Install Playwright Browsers**
+   ```bash
+   playwright install chromium
+   ```
+
+### Running the Application
+
+Start the API server (Backend + Frontend served statically):
+
 ```bash
-git clone https://github.com/Aniket-16-S/product-Sraper.git
+python api.py
 ```
-```bash
-cd product-Sraper 
-``` 
-install dependencies :
-```bash
-pip install -r requirements.txt
-```
-```bash
-playwright install
-```
-Run the async scraper :
-```bash
-python main_scraper.py
-```
-Enter your product keyword and let it cook 🔥 for 20 secs.
-Note : Please Wait for 40 to 50 sec for initial setup on first run.
+
+- **Frontend**: Open `http://localhost:8000` in your browser.
+- **API Docs**: Explore endpoints at `http://localhost:8000/docs`.
 
 ---
 
-## 📂 Output
-#### Products from all 3 sites shown in your terminal.
+## 🔌 API Endpoints
 
-#### Images of all products store in your File Mansger.
-
-#### Clean, structured format — easy to compare.
-
-#### Great for research, trend tracking, or flexing that dev power.
-
----
-
-## 🔮 Future Goals
-
-#### 🛍️ Add support for more sites like Ajio, Meesho, Nykaa, etc.
-
-#### 🎛️ GUI version for non-coders
-
----
-## ⭐ Why This Could Blow Up
-#### Tired of opening 10 tabs to compare products ? This solves that.
-#### Has advance features like Natural Language Processing for query matching and Cache Management.
-#### Get more than 100 products scraped at your terminal in 16 - 20 secs. ( assuming decent network connectivity. )
-#### It’s async and hence faster.
-#### With a clean UI or web version, this could go viral as a price-compare tool.
-#### Dev-friendly = easy stars + forks on GitHub.
-#### Great side-project flex for portfolios or hackathons.
----
-
-## ⚠️ Legal Note
-### This project is for educational use only. Respect each site’s terms of service and robots.txt. The author is not responsible for any misuse or violations of third-party terms and conditions.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/search?q={query}` | Search for products across all platforms. |
+| `GET` | `/api/admin/stats` | View cache hit rates and stored product counts. |
+| `POST` | `/api/admin/clear` | Flush all cached data. |
+| `POST` | `/api/admin/ttl` | Set cache Time-To-Live (TTL). |
 
 ---
 
-## 🤝 Contributions Welcome
- Got new site targets or bug fixes? Open a PR or drop ideas in issues!
-#### Let’s build the ultimate cross-site scraper 🧃
+## ⚠️ Legal Disclaimer
+
+This tool is created for **educational and research purposes only**. 
+- Respect the `robots.txt` of all target websites.
+- Do not use this tool for high-frequency scraping that degrades service for others.
+- The authors are not responsible for any misuse of this software.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+*Crafted with ❤️ by Aniket*
