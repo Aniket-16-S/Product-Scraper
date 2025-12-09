@@ -1,15 +1,24 @@
-# ⚡ UniScrape: AI-Powered Multi-Platform Product Search
+# ⚡ AI-Powered Multi-Platform Product Search
 
-> **Compare products from Amazon, Flipkart, Myntra, and Meesho in milliseconds.**  
+> **Compare products from Amazon, Flipkart, Myntra, and Meesho in seconds.**  
 > *Built for speed, stealth, and scalability.*
 
 ---
 
 ## 🚀 Overview
 
-**UniScrape** is a high-performance, asynchronous product aggregation engine. It scrapes multiple e-commerce platforms in parallel using **Playwright** (browser automation), processes data with **Natural Language Processing (NLP)**, and serves results via a **FastAPI** backend. 
+This project is a high-performance, asynchronous web-scraping engine. It scrapes multiple e-commerce platforms in parallel using **Playwright** (browser automation) and serves results via a **FastAPI** backend. 
 
 Designed for developers who need robust data extraction without the headache of managing proxies, captchas, or basic DOM parsing.
+
+---
+<p align=left >
+<img src="https://github.com/Aniket-16-S/ML-Models-Automation/blob/606a3321633631c7c0b6971cd849889c42f1e994/Models/Mediafiles_other_projects/ps/Screenshot%202025-12-09%20163944.png" width=45% > 
+&nbsp; &nbsp;
+<img src="https://github.com/Aniket-16-S/ML-Models-Automation/blob/aec1b12e0c6c6524ff0723407e33c40538a47418/Models/Mediafiles_other_projects/ps/Screenshot%202025-12-09%20163920.png" width=45%> 
+  </p>
+<img src="https://github.com/Aniket-16-S/ML-Models-Automation/blob/aec1b12e0c6c6524ff0723407e33c40538a47418/Models/Mediafiles_other_projects/ps/Screenshot%202025-12-09%20164045.png" width=90%>
+
 
 ---
 
@@ -43,18 +52,14 @@ Designed for developers who need robust data extraction without the headache of 
 | Component | Technology |
 |-----------|------------|
 | **Backend** | Python 3.10+, FastAPI, Uvicorn |
-| **Scraping** | Playwright (Async), Aiohttp |
-| **Database** | SQLite3 (Async) |
-| **ML/NLP** | Sentence-Transformers (HuggingFace) |
-| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+| **Scraping** | Playwright, BS4, selenium, Aiohttp |
+| **Database** | aiosqlite3  |
+| **ML/NLP** | Sentence-Transformers |
+| **Frontend** | HTML5, CSS3, JavaScript |
 
 ---
 
 ## ⚡ Quick Start
-
-### Prerequisites
-- Python 3.8+
-- Node.js (optional, for frontend dev)
 
 ### Installation
 
